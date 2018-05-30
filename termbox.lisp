@@ -210,8 +210,88 @@ position."
   (fg :uint16)
   (bg :uint16))
 
-(defcfun (cell-buffer "tb_cell_buffer") cell
+(defcfun (cell-buffer "tb_cell_buffer") (:pointer cell)
   "Returns a pointer to internal cell back buffer. You can get its dimensions
 using 'width' and 'height' functions. The pointer stays valid as long
 as no 'clear' and 'present' calls are made. The buffer is one-dimensional
 buffer containing lines of cells starting from the top.")
+
+(defconstant +input-current+ 0)
+(defconstant +input-esc+ 1)
+(defconstant +input-alt+ 2)
+(defconstant +input-mouse+ 4)
+
+(defcfun (select-input-mode "tb_select_input_mode") :int
+  "Sets the termbox input mode. Termbox has two input modes:
+1. Esc input mode.
+   When ESC sequence is in the buffer and it doesn't match any known
+   ESC sequence => ESC means +key-esc+.
+2. Alt input mode.
+   When ESC sequence is in the buffer and it doesn't match any known
+   sequence => ESC enables +mod-alt+ modifier for the next keyboard event.
+
+You can also apply +input-mouse+ via bitwise OR operation to either of the
+modes (e.g. +input-esc+ | +input-mouse+). If none of the main two modes
+were set, but the mouse mode was, +input-esc+ mode is used. If for some
+reason you've decided to use (+input-esc+ | +input-alt+) combination, it
+will behave as if only +input-esc+ was selected.
+
+If 'mode' is +input-current+, it returns the current input mode.
+
+Default termbox input mode is +input-esc+."
+  (mode :int))
+
+(defconstant +output-current+ 0)
+(defconstant +output-normal+ 1)
+(defconstant +output-256+ 2)
+(defconstant +output-216+ 3)
+(defconstant +output-grayscale 4)
+
+(defcfun (select-output-mode "tb_select_output_mode") :int
+  "Sets the termbox output mode. Termbox has three output options:
+1. +output-normal+     => [1..8]
+   This mode provides 8 different colors:
+   black, red, green, yellow, blue, magenta, cyan, white
+   Shortcut: +black+, +red+, ...
+   Attributes: +bold+, +underline+, +reverse+
+
+   Example usage:
+       (change-cell x y #\@ (bit-ior +black+ +bold) TB_RED)
+
+2. +output-256+        => [0..256]
+   In this mode you can leverage the 256 terminal mode:
+   0x00 - 0x07: the 8 colors as in +output-normal+
+   0x08 - 0x0f: * | +bold+
+   0x10 - 0xe7: 216 different colors
+   0xe8 - 0xff: 24 different shades of grey
+
+   Example usage:
+       (change-cell x y #\@ 184 240)
+       (change-cell x y #\@ #xb8 #xf0)
+
+3. +output-216+        => [0..216]
+   This mode supports the 3rd range of the 256 mode only.
+   But you don't need to provide an offset.
+
+4. +output-grayscale+  => [0..23]
+   This mode supports the 4th range of the 256 mode only.
+   But you dont need to provide an offset.
+
+If 'mode' is +output-current+, it returns the current output mode.
+
+Default termbox output mode is +output-normal+."
+  (mode :int))
+
+(defcfun (peek-event "tb_peek_event") :int
+  "Wait for an event up to 'timeout' milliseconds and fill the 'event'
+structure with it, when the event is available. Returns the type of the
+event (one of +event-*+ constants) or -1 if there was an error or 0 in case
+there were no event during 'timeout' period."
+  (event (:pointer event))
+  (timeout :int))
+
+(defcfun (poll-event "tb_poll_event") :int
+  "Wait for an event forever and fill the 'event' structure with it, when the
+event is available. Returns the type of the event (one of +event-*+
+constants) or -1 if there was an error."
+  (event (:pointer event)))
