@@ -38,7 +38,7 @@
 (defconstant +key-mouse-middle+ (- #xFFFF 24))
 (defconstant +key-mouse-release+ (- #xFFFF 25))
 (defconstant +key-mouse-wheel-up+ (- #xFFFF 26))
-(defconstant +key-mouse-wheel-down (- #xFFFF 27))
+(defconstant +key-mouse-wheel-down+ (- #xFFFF 27))
 
 ;;; These are all ASCII code points below SPACE character and a BACKSPACE key.
 (defconstant +key-ctrl-tidle+ #x00)
@@ -184,6 +184,9 @@ color/attributes set by 'set-clear-attributes' function.")
 (defcfun (set-clear-attributes "tb_set_clear_attributes") :void
   (fg :uint16)
   (bg :uint16))
+
+(defcfun (present "tb_present") :void
+  "Synchronizes the internal back buffer with the terminal.")
 
 (defconstant +hide-cursor+ -1)
 
