@@ -1,2 +1,2 @@
 (defpackage #:termbox
-  (:use #:cl))
+  (:use #:cl #:cffi))

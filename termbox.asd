@@ -3,6 +3,7 @@
   :author "Jarrod Jeffrey Ingram <jarrod.jeffi@gmail.com>"
   :license "MIT"
   :version "0.0.1"
+  :depends-on (#:cffi)
   :serial t
   :components ((:file "package")
                (:file "termbox")))
