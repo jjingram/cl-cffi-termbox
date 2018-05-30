@@ -1,0 +1,2 @@
+(defpackage #:termbox
+  (:use #:cl))
