@@ -1,4 +1,4 @@
-(in-package #:termbox)
+(in-package #:tb)
 
 (define-foreign-library libtermbox
   (:darwin "libtermbox.dylib")
@@ -202,7 +202,7 @@ is hidden by default."
 position."
   (x :int)
   (y :int)
-  (cell (:pointer event)))
+  (cell (:pointer (:struct cell))))
 
 (defcfun (change-cell "tb_change_cell") :void
   "Changes cell's parameters in the internal back buffer at the specified
@@ -213,7 +213,7 @@ position."
   (fg :uint16)
   (bg :uint16))
 
-(defcfun (cell-buffer "tb_cell_buffer") (:pointer cell)
+(defcfun (cell-buffer "tb_cell_buffer") (:pointer (:struct cell))
   "Returns a pointer to internal cell back buffer. You can get its dimensions
 using 'width' and 'height' functions. The pointer stays valid as long
 as no 'clear' and 'present' calls are made. The buffer is one-dimensional
@@ -248,7 +248,7 @@ Default termbox input mode is +input-esc+."
 (defconstant +output-normal+ 1)
 (defconstant +output-256+ 2)
 (defconstant +output-216+ 3)
-(defconstant +output-grayscale 4)
+(defconstant +output-grayscale+ 4)
 
 (defcfun (select-output-mode "tb_select_output_mode") :int
   "Sets the termbox output mode. Termbox has three output options:
@@ -290,11 +290,20 @@ Default termbox output mode is +output-normal+."
 structure with it, when the event is available. Returns the type of the
 event (one of +event-*+ constants) or -1 if there was an error or 0 in case
 there were no event during 'timeout' period."
-  (event (:pointer event))
+  (event (:pointer (:struct event)))
   (timeout :int))
 
 (defcfun (poll-event "tb_poll_event") :int
   "Wait for an event forever and fill the 'event' structure with it, when the
 event is available. Returns the type of the event (one of +event-*+
 constants) or -1 if there was an error."
-  (event (:pointer event)))
+  (event (:pointer (:struct event))))
+
+(defmacro with-termbox (&body body)
+  "Initializes termbox and cleanly shuts termbox down while executing 'body'
+in between."
+  `(unwind-protect
+       (progn
+         (init)
+         ,@body)
+     (shutdown)))
