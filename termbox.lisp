@@ -122,10 +122,21 @@
 ;;;  - 'ch' is a unicode character
 ;;;  - 'fg' foreground color and attributes
 ;;;  - 'bg' background color and attributes
-(defcstruct cell
+(defcstruct %cell
   (ch :uint32)
   (fg :uint16)
   (bg :uint16))
+
+(defclass cell ()
+  ((ch :accessor cell-ch :initarg :ch)
+   (fg :accessor cell-fg :initarg :fg)
+   (bg :accessor cell-bg :initarg :bg))
+  (:documentation
+    "A cell, single conceptual entity on the terminal screen. The terminal
+screen is basically a 2d array of cells. It has the following fields:
+ - 'ch' is a unicode character
+ - 'fg' foreground color and attributes
+ - 'bg' background color and attributes"))
 
 (defconstant +event-key+ 1)
 (defconstant +event-resize+ 2)
@@ -137,7 +148,7 @@
 ;;; +event-mouse+. The 'key' field is valid if 'type' is either +event-key+ or
 ;;; +event-mouse+. The fields 'key' and 'ch' are mutually exclusive; only one
 ;;; of them can be non-zero at a time.
-(defcstruct event
+(defcstruct %event
   (type :uint8)
   (mod :uint8) ; modifiers to either 'key' or 'ch' below
   (key :uint16) ; one of the 'key' constants
@@ -146,6 +157,25 @@
   (h :int32)
   (x :int32)
   (y :int32))
+
+(defclass event ()
+  ((type :accessor event-type :initarg :type)
+   (mod :accessor event-mod :initarg :mod :documentation "modifiers to either
+        'key' or 'ch'")
+   (key :accessor event-key :initarg :key :documentation "one of the 'key'
+        constants")
+   (ch :accessor event-ch :initarg :ch :documentation "unicode character")
+   (w :accessor event-w :initarg :w)
+   (h :accessor event-h :initarg :h)
+   (x :accessor event-x :initarg :x)
+   (y :accessor event-y :initarg :y))
+  (:documentation
+    "An event, single interaction from the user. The 'mod' and 'ch' fields are
+    valid if 'type' is +event-key+. The 'w' and 'h' fields are valid if 'type'
+    is +event-resize+. The 'x' and 'y' fields are valid if 'type' is
+    +event-mouse+. The 'key' field is valid if 'type' is either +event-key+ or
+    +event-mouse+. The fields 'key' and 'ch' are mutually exclusive; only one
+    of them can be non-zero at a time."))
 
 (defconstant +eunsupported-terminal+ -1)
 (defconstant +efailed-to-open-tty+ -2)
@@ -197,14 +227,22 @@ is hidden by default."
   (cx :int)
   (cy :int))
 
-(defcfun (put-cell "tb_put_cell") :void
+(defcfun (%put-cell "tb_put_cell") :void
   "Changes cell's parameters in the internal back buffer at the specified
 position."
   (x :int)
   (y :int)
-  (cell (:pointer (:struct cell))))
+  (cell (:pointer (:struct %cell))))
 
-(defcfun (change-cell "tb_change_cell") :void
+(defmethod put-cell (x y (c cell))
+  (with-foreign-object (%c '(:pointer (:struct %cell)))
+    (with-slots (ch fg bg) c
+      (setf (foreign-slot-value %c '(:struct %cell) 'ch) (char-code ch))
+      (setf (foreign-slot-value %c '(:struct %cell) 'fg) fg)
+      (setf (foreign-slot-value %c '(:struct %cell) 'bg) bg)
+      (%put-cell x y %c))))
+
+(defcfun (%change-cell "tb_change_cell") :void
   "Changes cell's parameters in the internal back buffer at the specified
 position."
   (x :int)
@@ -213,7 +251,12 @@ position."
   (fg :uint16)
   (bg :uint16))
 
-(defcfun (cell-buffer "tb_cell_buffer") (:pointer (:struct cell))
+(defun change-cell (x y ch fg bg)
+  "Changes cell's parameters in the internal back buffer at the specified
+position."
+  (%change-cell x y (char-code ch) fg bg))
+
+(defcfun (cell-buffer "tb_cell_buffer") (:pointer (:struct %cell))
   "Returns a pointer to internal cell back buffer. You can get its dimensions
 using 'width' and 'height' functions. The pointer stays valid as long
 as no 'clear' and 'present' calls are made. The buffer is one-dimensional
@@ -285,25 +328,50 @@ If 'mode' is +output-current+, it returns the current output mode.
 Default termbox output mode is +output-normal+."
   (mode :int))
 
-(defcfun (peek-event "tb_peek_event") :int
+(defcfun (%peek-event "tb_peek_event") :int
   "Wait for an event up to 'timeout' milliseconds and fill the 'event'
 structure with it, when the event is available. Returns the type of the
 event (one of +event-*+ constants) or -1 if there was an error or 0 in case
 there were no event during 'timeout' period."
-  (event (:pointer (:struct event)))
+  (event (:pointer (:struct %event)))
   (timeout :int))
 
-(defcfun (poll-event "tb_poll_event") :int
+(defun peek-event (timeout)
+  (with-foreign-object (e '(:pointer (:struct %event)))
+    (let ((ret (%peek-event e timeout)))
+      (case ret
+        (-1 (error "peek-event error"))
+        (0 nil)
+        (1 (with-foreign-slots ((type mod key ch w h x y)
+                                e (:struct %event))
+             (make-instance 'event :type type :mod mod :key key :ch ch :w w
+                            :h h :x x :y y)))))))
+
+(defcfun (%poll-event "tb_poll_event") :int
   "Wait for an event forever and fill the 'event' structure with it, when the
 event is available. Returns the type of the event (one of +event-*+
 constants) or -1 if there was an error."
-  (event (:pointer (:struct event))))
+  (event (:pointer (:struct %event))))
+
+(defun poll-event ()
+  (with-foreign-object (e '(:pointer (:struct %event)))
+    (let ((ret (%poll-event e)))
+      (case ret
+        (-1 (error "peek-event error"))
+        (0 nil)
+        (1 (with-foreign-slots ((type mod key ch w h x y)
+                                e (:struct %event))
+             (make-instance 'event :type type :mod mod :key key :ch ch :w w
+                            :h h :x x :y y)))))))
 
 (defmacro with-termbox (&body body)
   "Initializes termbox and cleanly shuts termbox down while executing 'body'
 in between."
   `(unwind-protect
-       (progn
-         (init)
-         ,@body)
+       (let ((ret (init)))
+         (case ret
+           (+eunsupported-terminal+ (error "unsupported terminal"))
+           (+efailed-to-open-tty+ (error "failed to open tty"))
+           (+epipe-trap-error+ (error "pipe trap error"))
+           (otherwise (progn ,@body))))
      (shutdown)))

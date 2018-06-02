@@ -6,4 +6,5 @@
   :depends-on (#:cffi)
   :serial t
   :components ((:file "package")
-               (:file "termbox")))
+               (:file "termbox")
+               (:file "example")))
