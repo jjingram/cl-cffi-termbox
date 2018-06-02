@@ -237,9 +237,9 @@ position."
 (defmethod put-cell (x y (c cell))
   (with-foreign-object (%c '(:pointer (:struct %cell)))
     (with-slots (ch fg bg) c
-      (setf (foreign-slot-value %c '(:struct %cell) 'ch) (char-code ch))
-      (setf (foreign-slot-value %c '(:struct %cell) 'fg) fg)
-      (setf (foreign-slot-value %c '(:struct %cell) 'bg) bg)
+      (setf (foreign-slot-value %c '(:struct %cell) 'ch) (char-code ch)
+            (foreign-slot-value %c '(:struct %cell) 'fg) fg
+            (foreign-slot-value %c '(:struct %cell) 'bg) bg)
       (%put-cell x y %c))))
 
 (defcfun (%change-cell "tb_change_cell") :void
@@ -256,11 +256,24 @@ position."
 position."
   (%change-cell x y (char-code ch) fg bg))
 
-(defcfun (cell-buffer "tb_cell_buffer") (:pointer (:struct %cell))
+(defcfun (%cell-buffer "tb_cell_buffer") (:pointer (:struct %cell))
   "Returns a pointer to internal cell back buffer. You can get its dimensions
 using 'width' and 'height' functions. The pointer stays valid as long
 as no 'clear' and 'present' calls are made. The buffer is one-dimensional
 buffer containing lines of cells starting from the top.")
+
+(defun put-cells (offset cells)
+  (let ((w (width))
+        (h (height))
+        (cb (%cell-buffer)))
+    (loop for i from offset below (min (+ offset (length cells)) (* w h))
+          do (let ((c (elt cells (- i offset)))
+                   (%c (mem-aref cb '(:pointer (:struct %cell)) i)))
+               (with-slots (ch fg bg) c
+                 (setf (foreign-slot-value %c '(:struct %cell) 'ch) (char-code ch)
+                       (foreign-slot-value %c '(:struct %cell) 'fg) fg
+                       (foreign-slot-value %c '(:struct %cell) 'bg) bg))))))
+
 
 (defconstant +input-current+ 0)
 (defconstant +input-esc+ 1)
