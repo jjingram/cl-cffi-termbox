@@ -7,6 +7,11 @@
   (:export
     with-termbox
 
+    cell cell-ch cell-fg cell-bg
+
+    event event-type eventy-mod event-key event-ch event-w event-h event-x
+    event-y
+
     +key-f1+ +key-f2+ +key-f3+ +key-f4+ +key-f5+ +key-f6+ +key-f7+ +key-f8+
     +key-f9+ +key-f10+ +key-f11+ +key-f12+ +key-insert+ +key-delete+ +key-home+
     +key-end+ +key-pgup+ +key-pgdn+ +key-arrow-up+ +key-arrow-down+ +key-arrow-left+

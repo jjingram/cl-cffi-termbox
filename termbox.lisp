@@ -128,9 +128,9 @@
   (bg :uint16))
 
 (defclass cell ()
-  ((ch :accessor cell-ch :initarg :ch)
-   (fg :accessor cell-fg :initarg :fg)
-   (bg :accessor cell-bg :initarg :bg))
+  ((ch :accessor cell-ch :initarg :ch :initform #\space)
+   (fg :accessor cell-fg :initarg :fg :initform +default+)
+   (bg :accessor cell-bg :initarg :bg :initform +default+))
   (:documentation
     "A cell, single conceptual entity on the terminal screen. The terminal
 screen is basically a 2d array of cells. It has the following fields:
