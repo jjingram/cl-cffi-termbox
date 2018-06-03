@@ -364,9 +364,10 @@ there were no event during 'timeout' period."
       (case ret
         (-1 (error "peek-event error"))
         (0 nil)
-        (1 (with-foreign-slots ((type mod key ch w h x y)
+        (otherwise
+          (with-foreign-slots ((type mod key ch w h x y)
                                 e (:struct %event))
-             (make-instance 'event :type type :mod mod :key key :ch ch :w w
+            (make-instance 'event :type type :mod mod :key key :ch ch :w w
                             :h h :x x :y y)))))))
 
 (defcfun (%poll-event "tb_poll_event") :int
@@ -379,12 +380,12 @@ constants) or -1 if there was an error."
   (with-foreign-object (e '(:pointer (:struct %event)))
     (let ((ret (%poll-event e)))
       (case ret
-        (-1 (error "peek-event error"))
-        (0 nil)
-        (1 (with-foreign-slots ((type mod key ch w h x y)
+        (-1 (error "poll-event error"))
+        (otherwise
+          (with-foreign-slots ((type mod key ch w h x y)
                                 e (:struct %event))
-             (make-instance 'event :type type :mod mod :key key :ch ch :w w
-                            :h h :x x :y y)))))))
+            (make-instance 'event :type type :mod mod :key key :ch ch :w w
+                           :h h :x x :y y)))))))
 
 (defmacro with-termbox (&body body)
   "Initializes termbox and cleanly shuts termbox down while executing 'body'

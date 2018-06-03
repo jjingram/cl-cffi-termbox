@@ -8,7 +8,7 @@
   :components ((:file "package")
                (:file "termbox")))
 
-(asdf:defsystem #:termbox-examples
+(asdf:defsystem #:termbox/examples
   :description "Examples of using cl-cffi-termbox"
   :author "Jarrod Jeffrey Ingram <jarrod.jeffi@gmail.com>"
   :license "Public Domain"
