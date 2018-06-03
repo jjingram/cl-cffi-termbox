@@ -1,7 +1,3 @@
-(defpackage #:tb.example
-  (:use #:cl)
-  (:export run))
-
 (defpackage #:tb
   (:use #:cl #:cffi)
   (:export
