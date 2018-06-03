@@ -50,7 +50,7 @@
 
     put-cell change-cell
 
-    put-cells ;cell-buffer
+    blit
 
     +input-current+ +input-esc+ +input-alt+ +input-mouse+
 

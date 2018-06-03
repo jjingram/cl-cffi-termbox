@@ -9,7 +9,7 @@
                             collect (make-instance 'tb:cell :ch x :fg tb:+default+ :bg tb:+default+))))
       (tb:clear)
       (tb:set-cursor 0 0)
-      (tb:put-cells 0 cells)
+      (tb:blit 0 cells)
       (tb:put-cell (truncate w 2) (truncate h 2) cell)
       (tb:set-cursor tb:+hide-cursor+ tb:+hide-cursor+)
       (tb:present)

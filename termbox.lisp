@@ -262,10 +262,15 @@ using 'width' and 'height' functions. The pointer stays valid as long
 as no 'clear' and 'present' calls are made. The buffer is one-dimensional
 buffer containing lines of cells starting from the top.")
 
-(defun put-cells (offset cells)
+;;; TODO: copy memory over all at once rather than individual calls to
+;;; 'memcpy'.
+(defun blit (offset cells)
+  "Copies the buffer from 'cells' at the specified position, assuming the
+buffer is a two-dimensional array of size ('w' x 'h'), represented as a
+one-dimensional buffer containing lines of cells starting from the top."
   (let ((w (width))
         (h (height))
-        (cb (%cell-buffer)))
+        (cell-buffer (%cell-buffer)))
     (loop for i from offset below (min (+ offset (length cells)) (* w h))
           do (let ((c (elt cells (- i offset))))
                (with-slots (ch fg bg) c
@@ -274,7 +279,7 @@ buffer containing lines of cells starting from the top.")
                          (foreign-slot-value %c '(:struct %cell) 'fg) fg
                          (foreign-slot-value %c '(:struct %cell) 'bg) bg)
                    (foreign-funcall "memcpy"
-                                    :pointer (mem-aptr cb '(:struct %cell) i)
+                                    :pointer (mem-aptr cell-buffer '(:struct %cell) i)
                                     :pointer %c
                                     :int (foreign-type-size '(:struct %cell))
                                     :void)))))))
