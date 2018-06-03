@@ -267,13 +267,17 @@ buffer containing lines of cells starting from the top.")
         (h (height))
         (cb (%cell-buffer)))
     (loop for i from offset below (min (+ offset (length cells)) (* w h))
-          do (let ((c (elt cells (- i offset)))
-                   (%c (mem-aref cb '(:pointer (:struct %cell)) i)))
+          do (let ((c (elt cells (- i offset))))
                (with-slots (ch fg bg) c
-                 (setf (foreign-slot-value %c '(:struct %cell) 'ch) (char-code ch)
-                       (foreign-slot-value %c '(:struct %cell) 'fg) fg
-                       (foreign-slot-value %c '(:struct %cell) 'bg) bg))))))
-
+                 (with-foreign-object (%c '(:struct %cell))
+                   (setf (foreign-slot-value %c '(:struct %cell) 'ch) (char-code ch)
+                         (foreign-slot-value %c '(:struct %cell) 'fg) fg
+                         (foreign-slot-value %c '(:struct %cell) 'bg) bg)
+                   (foreign-funcall "memcpy"
+                                    :pointer (mem-aptr cb '(:struct %cell) i)
+                                    :pointer %c
+                                    :int (foreign-type-size '(:struct %cell))
+                                    :void)))))))
 
 (defconstant +input-current+ 0)
 (defconstant +input-esc+ 1)

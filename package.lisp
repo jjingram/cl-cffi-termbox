@@ -5,7 +5,7 @@
 (defpackage #:tb
   (:use #:cl #:cffi)
   (:export
-    with-termbox put-cells
+    with-termbox
 
     +key-f1+ +key-f2+ +key-f3+ +key-f4+ +key-f5+ +key-f6+ +key-f7+ +key-f8+
     +key-f9+ +key-f10+ +key-f11+ +key-f12+ +key-insert+ +key-delete+ +key-home+
@@ -50,7 +50,7 @@
 
     put-cell change-cell
 
-    cell-buffer
+    put-cells ;cell-buffer
 
     +input-current+ +input-esc+ +input-alt+ +input-mouse+
 
